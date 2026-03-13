@@ -1,17 +1,19 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Dict, Any, List
+import pytz
 
 async def calculate_monthly_revenue(property_id: str, month: int, year: int, db_session=None) -> Decimal:
     """
     Calculates revenue for a specific month.
     """
 
-    start_date = datetime(year, month, 1)
+    utc = pytz.utc
+    start_date = utc.localize(datetime(year, month, 1))
     if month < 12:
-        end_date = datetime(year, month + 1, 1)
+        end_date = utc.localize(datetime(year, month + 1, 1))
     else:
-        end_date = datetime(year + 1, 1, 1)
+        end_date = utc.localize(datetime(year + 1, 1, 1))
         
     print(f"DEBUG: Querying revenue for {property_id} from {start_date} to {end_date}")
 
@@ -88,17 +90,21 @@ async def calculate_total_revenue(property_id: str, tenant_id: str) -> Dict[str,
     except Exception as e:
         print(f"Database error for {property_id} (tenant: {tenant_id}): {e}")
         
-        # Create property-specific mock data for testing when DB is unavailable
-        # This ensures each property shows different figures
+        # Create tenant+property-specific mock data for testing when DB is unavailable
         mock_data = {
-            'prop-001': {'total': '1000.00', 'count': 3},
-            'prop-002': {'total': '4975.50', 'count': 4}, 
-            'prop-003': {'total': '6100.50', 'count': 2},
-            'prop-004': {'total': '1776.50', 'count': 4},
-            'prop-005': {'total': '3256.00', 'count': 3}
+            'tenant-a': {
+                'prop-001': {'total': '1000.00', 'count': 3},
+                'prop-002': {'total': '4975.50', 'count': 4},
+                'prop-003': {'total': '6100.50', 'count': 2},
+            },
+            'tenant-b': {
+                'prop-001': {'total': '1776.50', 'count': 4},
+                'prop-004': {'total': '1776.50', 'count': 4},
+                'prop-005': {'total': '3256.00', 'count': 3},
+            }
         }
-        
-        mock_property_data = mock_data.get(property_id, {'total': '0.00', 'count': 0})
+
+        mock_property_data = mock_data.get(tenant_id, {}).get(property_id, {'total': '0.00', 'count': 0})
         
         return {
             "property_id": property_id,
