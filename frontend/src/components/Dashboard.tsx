@@ -1,16 +1,36 @@
 import React, { useState } from "react";
 import { RevenueSummary } from "./RevenueSummary";
 
-const PROPERTIES = [
-  { id: 'prop-001', name: 'Beach House Alpha' },
-  { id: 'prop-002', name: 'City Apartment Downtown' },
-  { id: 'prop-003', name: 'Country Villa Estate' },
-  { id: 'prop-004', name: 'Lakeside Cottage' },
-  { id: 'prop-005', name: 'Urban Loft Modern' }
-];
+const PROPERTIES_BY_TENANT: Record<string, { id: string; name: string }[]> = {
+  'tenant-a': [
+    { id: 'prop-001', name: 'Beach House Alpha' },
+    { id: 'prop-002', name: 'City Apartment Downtown' },
+    { id: 'prop-003', name: 'Country Villa Estate' },
+  ],
+  'tenant-b': [
+    { id: 'prop-001', name: 'Mountain Lodge Beta' },
+    { id: 'prop-004', name: 'Lakeside Cottage' },
+    { id: 'prop-005', name: 'Urban Loft Modern' },
+  ],
+};
+
+function getCurrentTenantId(): string {
+  try {
+    const stored = localStorage.getItem('base360-auth-token');
+    if (stored) {
+      const session = JSON.parse(stored);
+      return session?.user?.tenant_id || 'tenant-a';
+    }
+  } catch {
+    // fall through
+  }
+  return 'tenant-a';
+}
 
 const Dashboard: React.FC = () => {
-  const [selectedProperty, setSelectedProperty] = useState('prop-001');
+  const tenantId = getCurrentTenantId();
+  const properties = PROPERTIES_BY_TENANT[tenantId] ?? PROPERTIES_BY_TENANT['tenant-a'];
+  const [selectedProperty, setSelectedProperty] = useState(properties[0].id);
 
   return (
     <div className="p-4 lg:p-6 min-h-full">
@@ -35,7 +55,7 @@ const Dashboard: React.FC = () => {
                   onChange={(e) => setSelectedProperty(e.target.value)}
                   className="block w-full sm:w-auto min-w-[200px] px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
-                  {PROPERTIES.map((property) => (
+                  {properties.map((property) => (
                     <option key={property.id} value={property.id}>
                       {property.name}
                     </option>
